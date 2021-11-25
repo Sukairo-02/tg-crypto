@@ -1,0 +1,13 @@
+{
+	"server": {
+		"PORT": 3000
+	},
+
+	"db": {
+		"conStr": "mongodb+srv://Sukairo:basepass@lab4c.2zcnb.mongodb.net/tgCrypto?retryWrites=true&w=majority"
+	},
+
+	"crypto": {
+		"key": "d5e08285-6b3c-49ef-b0e1-f4476af134f6"
+	}
+}
