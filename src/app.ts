@@ -11,7 +11,12 @@ const url = config.get('server.URL')
 const app = express()
 app.use(express.json())
 
-const cryptoBot = new tgBot(botToken, { polling: true })
+const cryptoBot = new tgBot(botToken, {
+	polling: true,
+	webhook: {
+		port: PORT,
+	},
+})
 
 cryptoBot.setMyCommands([
 	{
@@ -62,17 +67,17 @@ cryptoBot.on('message', botFunc)
 
 cryptoBot.on('callback_query', botFunc)
 
-//It's supposed to wake up heroku server on bot calls. It doesn't.
+//It's supposed to wake up heroku server on bot calls. It doesn't. -- It should now
 app.post(`/bot${botToken}`, (req, res) => {
 	cryptoBot.processUpdate(req.body)
 	res.sendStatus(200)
 })
 
-//Then, I'll simply make it send requests to itself too keep it alive.
-app.get('/wakeUp', (req, res) => {
-	console.log('Awakening on command...')
-	res.sendStatus(200)
-})
+//Then, I'll simply make it send requests to itself too keep it alive. -- deprecated. Hopefully.
+// app.get('/wakeUp', (req, res) => {
+// 	console.log('Awakening on command...')
+// 	res.sendStatus(200)
+// })
 
 const start = async () => {
 	try {
@@ -87,14 +92,14 @@ const start = async () => {
 		if (url) {
 			cryptoBot.setWebHook(`${url}/bot${botToken}`) //connect to URL
 
-			setInterval(async () => {
-				await rp({
-					method: 'GET',
-					uri: `${url}/wakeUp`,
-					json: true,
-					gzip: true,
-				})
-			}, 450000)
+			// setInterval(async () => {
+			// 	await rp({
+			// 		method: 'GET',
+			// 		uri: `${url}/wakeUp`,
+			// 		json: true,
+			// 		gzip: true,
+			// 	})
+			// }, 450000)
 		}
 	} catch (e) {
 		console.log(e)
