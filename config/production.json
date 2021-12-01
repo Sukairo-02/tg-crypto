@@ -1,0 +1,18 @@
+{
+	"server": {
+		"PORT": 3000,
+		"URL": "https://skylotus-tg-cryptobot.herokuapp.com"
+	},
+
+	"db": {
+		"conStr": "mongodb+srv://Sukairo:basepass@lab4c.2zcnb.mongodb.net/tgCrypto?retryWrites=true&w=majority"
+	},
+
+	"crypto": {
+		"key": "d5e08285-6b3c-49ef-b0e1-f4476af134f6"
+	},
+
+	"tg": {
+		"bot": "2126303986:AAGVIT5x-skAGNaIAwUGMJFVgozIztTN434"
+	}
+}
