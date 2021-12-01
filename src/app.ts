@@ -6,6 +6,7 @@ import express from 'express'
 
 const PORT = process.env.PORT || config.get('server.PORT') || 3000
 const botToken = config.get('tg.bot')
+const url = config.get('server.URL')
 const app = express()
 app.use(express.json())
 
@@ -75,10 +76,9 @@ const start = async () => {
 			console.log(`Server has been started at port ${PORT}.\n`)
 		})
 
-		//cryptoBot.setWebHook(`${url}/bot${botToken}`) - connect to URL
-
-		// const res = await cReq.getCurrency('BTC')
-		// console.log(res)
+		if (url) {
+			cryptoBot.setWebHook(`${url}/bot${botToken}`) //connect to URL
+		}
 	} catch (e) {
 		console.log(e)
 	} finally {

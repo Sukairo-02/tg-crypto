@@ -1,7 +1,7 @@
 {
 	"server": {
 		"PORT": 3000,
-		"URL": "https://cryptobot.herokuapp.com"
+		"URL": ""
 	},
 
 	"db": {
