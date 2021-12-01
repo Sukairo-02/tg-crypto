@@ -13,7 +13,7 @@ app.use(express.json())
 
 const cryptoBot = new tgBot(botToken, {
 	polling: true,
-	webhook: {
+	webHook: {
 		port: PORT,
 	},
 })
