@@ -1,6 +1,7 @@
 {
 	"server": {
-		"PORT": 3000
+		"PORT": 3000,
+		"URL": "https://cryptobot.herokuapp.com"
 	},
 
 	"db": {
@@ -9,5 +10,9 @@
 
 	"crypto": {
 		"key": "d5e08285-6b3c-49ef-b0e1-f4476af134f6"
+	},
+
+	"tg": {
+		"bot": "2126303986:AAGVIT5x-skAGNaIAwUGMJFVgozIztTN434"
 	}
 }

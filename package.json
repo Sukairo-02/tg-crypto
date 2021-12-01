@@ -22,6 +22,7 @@
 		"config": "^3.3.6",
 		"express": "^4.17.1",
 		"mongodb": "^4.2.0",
+		"node-telegram-bot-api": "^0.54.0",
 		"request-promise": "^4.2.6"
 	},
 	"devDependencies": {
