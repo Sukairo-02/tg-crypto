@@ -3,6 +3,7 @@ import config from 'config'
 import dbClient from './database/dbObject'
 import qProc from './util/qProc'
 import express from 'express'
+import rp from 'request-promise'
 
 const PORT = process.env.PORT || config.get('server.PORT') || 3000
 const botToken = config.get('tg.bot')
@@ -61,8 +62,15 @@ cryptoBot.on('message', botFunc)
 
 cryptoBot.on('callback_query', botFunc)
 
+//It's supposed to wake up heroku server on bot calls. It doesn't.
 app.post(`/bot${botToken}`, (req, res) => {
 	cryptoBot.processUpdate(req.body)
+	res.sendStatus(200)
+})
+
+//Then, I'll simply make it send requests to itself too keep it alive.
+app.get('/wakeUp', (req, res) => {
+	console.log('Awakening on command...')
 	res.sendStatus(200)
 })
 
@@ -78,6 +86,15 @@ const start = async () => {
 
 		if (url) {
 			cryptoBot.setWebHook(`${url}/bot${botToken}`) //connect to URL
+
+			setInterval(async () => {
+				await rp({
+					method: 'GET',
+					uri: `${url}/wakeUp`,
+					json: true,
+					gzip: true,
+				})
+			}, 450000)
 		}
 	} catch (e) {
 		console.log(e)
