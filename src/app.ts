@@ -2,14 +2,14 @@ import tgBot from 'node-telegram-bot-api'
 import config from 'config'
 import dbClient from './database/dbObject'
 import qProc from './util/qProc'
-import express from 'express'
-import rp from 'request-promise'
+//import express from 'express'
+//import rp from 'request-promise'
 
 const PORT = process.env.PORT || config.get('server.PORT') || 3000
 const botToken = config.get('tg.bot')
 const url = config.get('server.URL')
-const app = express()
-app.use(express.json())
+//const app = express()
+//app.use(express.json())
 
 const cryptoBot = new tgBot(botToken, {
 	webHook: {
@@ -67,10 +67,10 @@ cryptoBot.on('message', botFunc)
 cryptoBot.on('callback_query', botFunc)
 
 //It's supposed to wake up heroku server on bot calls. It doesn't. -- It should now
-app.post(`/bot${botToken}`, (req, res) => {
-	cryptoBot.processUpdate(req.body)
-	res.sendStatus(200)
-})
+// app.post(`/bot${botToken}`, (req, res) => {
+// 	cryptoBot.processUpdate(req.body)
+// 	res.sendStatus(200)
+// })
 
 //Then, I'll simply make it send requests to itself too keep it alive. -- deprecated. Hopefully.
 // app.get('/wakeUp', (req, res) => {
@@ -84,9 +84,9 @@ const start = async () => {
 			console.log(err || 'Database connected succesfully!')
 		})
 
-		app.listen(PORT, () => {
-			console.log(`Server has been started at port ${PORT}.\n`)
-		})
+		// app.listen(PORT, () => {
+		// 	console.log(`Server has been started at port ${PORT}.\n`)
+		// })
 
 		if (url) {
 			cryptoBot.setWebHook(`${url}/bot${botToken}`) //connect to URL
