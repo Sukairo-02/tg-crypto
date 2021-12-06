@@ -1,1 +1,1 @@
-web: npm i && npm i -D && npx tsc && node compiled/app.js
+web: npm i && npx tsc && node compiled/app.js
