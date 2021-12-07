@@ -134,7 +134,7 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 					});
 					setTimeout(() => {
 						recentCache = undefined;
-					}, 600050 - (Date.now() - earliest!));
+					}, 60050 - (Date.now() - earliest!));
 					// Now cache is somewhat synchronized with api's data update time
 				}
 
@@ -230,7 +230,7 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 					cCrypCache = cryptoCache.get(cSymb);
 					setTimeout(() => {
 						cryptoCache.delete(cSymb);
-					}, 600050 - (Date.now() - updateDate));
+					}, 60050 - (Date.now() - updateDate));
 					// Now cache is somewhat synchronized with api's data update time
 				}
 
