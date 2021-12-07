@@ -1,9 +1,7 @@
 import type { InlineKeyboardMarkup } from 'node-telegram-bot-api';
 import dbClient from '../database/dbObject';
 import cryptoRequest from './cryptoRequest';
-import type {
- tFavCache, tCryptoCache, tRecentCache, tBotNswr,
-} from '../types/procTypes';
+import type { tFavCache, tCryptoCache, tRecentCache, tBotNswr } from '../types/procTypes';
 
 const user = dbClient.db('tgCrypto').collection('User');
 
@@ -126,9 +124,18 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 					const updated = res.status.timestamp;
 					recentCache = { data, updated };
 					cRecCache = recentCache;
+
+					let earliest: number;
+					res.data.forEach((e) => {
+						const updateDate = new Date(e.last_updated).getTime();
+						if (!earliest || updateDate < earliest) {
+							earliest = updateDate;
+						}
+					});
 					setTimeout(() => {
 						recentCache = undefined;
-					}, 600000);
+					}, 600050 - (Date.now() - earliest!));
+					// Now cache is somewhat synchronized with api's data update time
 				}
 
 				const date = cRecCache!.updated.split('T');
@@ -218,10 +225,13 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 						fullyDiluted: res.quote.USD.fully_diluted_market_cap,
 					});
 
+					const updateDate = new Date(res.last_updated).getTime();
+
 					cCrypCache = cryptoCache.get(cSymb);
 					setTimeout(() => {
 						cryptoCache.delete(cSymb);
-					}, 600000);
+					}, 600050 - (Date.now() - updateDate));
+					// Now cache is somewhat synchronized with api's data update time
 				}
 
 				const uFavList = await getFavList(userID);
