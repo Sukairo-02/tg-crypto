@@ -1,0 +1,38 @@
+{
+	"extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended", "airbnb-base", "airbnb-typescript/base"],
+	"parser": "@typescript-eslint/parser",
+	"parserOptions": {
+		"ecmaVersion": 2016,
+		"sourceType": "module",
+		"project": ["./tsconfig.json"]
+	},
+	"plugins": ["@typescript-eslint", "prettier", "import"],
+	"env": {
+		"node": true
+	},
+	"rules": {
+		"prettier/prettier": "off",
+		"no-plusplus": "off",
+		"no-ternary": "off",
+		"no-nested-ternary": "warn",
+		"@typescript-eslint/naming-convention": [
+			"error",
+			{
+				"selector": "memberLike",
+				"modifiers": ["private"],
+				"format": ["camelCase"],
+				"leadingUnderscore": "require"
+			}
+		],
+		"@typescript-eslint/indent": "off",
+		"indent": ["off", "tab"],
+		"@typescript-eslint/no-throw-literal": "off",
+		"@typescript-eslint/ban-ts-comment": "warn",
+		"@typescript-eslint/no-explicit-any": "warn",
+		"no-bitwise": "off",
+		"no-underscore-dangle": "off",
+		"no-tabs": "off",
+		"max-len": "warn",
+		"object-curly-newline": "warn"
+	}
+}

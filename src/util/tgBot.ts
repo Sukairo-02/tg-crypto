@@ -1,45 +1,41 @@
-import tgBot from 'node-telegram-bot-api'
-import qProc from './queryProcessor'
+import TelegramBot from 'node-telegram-bot-api';
+import qProc from './queryProcessor';
 
 const init = (botToken: string, PORT: number, url?: string | undefined) => {
-	let cryptoBot: tgBot
+	let cryptoBot: TelegramBot;
 	if (url) {
-		cryptoBot = new tgBot(botToken, {
+		cryptoBot = new TelegramBot(botToken, {
 			webHook: {
 				port: PORT,
 			},
-		})
+		});
 
-		cryptoBot.setWebHook(`${url}/bot${botToken}`)
+		cryptoBot.setWebHook(`${url}/bot${botToken}`);
 	} else {
-		cryptoBot = new tgBot(botToken, {
+		cryptoBot = new TelegramBot(botToken, {
 			polling: true,
-		})
+		});
 	}
 
-	const botFunc = async (msg: tgBot.Message | tgBot.CallbackQuery) => {
+	const botFunc = async (msg: TelegramBot.Message | TelegramBot.CallbackQuery) => {
 		try {
 			if (typeof msg?.from?.id !== 'number') {
-				return
+				return;
 			}
 
-			//@ts-ignore -- one of those fields exist in any incoming type
-			const chatID: string = msg?.chat?.id || msg?.message?.chat?.id
-			const userID: number = msg.from!.id
-			//@ts-ignore -- same here
-			const raw = msg.text || msg.data || ' '
-			const query: string[] = raw.split(' ')
-			const qRes = await qProc(query, userID)
+			// @ts-ignore -- one of those fields exist in any incoming type
+			const chatID: string = msg?.chat?.id || msg?.message?.chat?.id;
+			const userID: number = msg.from!.id;
+			// @ts-ignore -- same here
+			const raw = msg.text || msg.data || ' ';
+			const query: string[] = raw.split(' ');
+			const qRes = await qProc(query, userID);
 
-			await cryptoBot.sendMessage(
-				chatID,
-				qRes.msg || 'Sorry, no answer has been specified...',
-				{ parse_mode: 'HTML', reply_markup: qRes.btn }
-			)
+			await cryptoBot.sendMessage(chatID, qRes.msg || 'Sorry, no answer has been specified...', { parse_mode: 'HTML', reply_markup: qRes.btn });
 		} catch (e) {
-			console.log(e, msg)
+			console.log(e, msg);
 		}
-	}
+	};
 
 	cryptoBot.setMyCommands([
 		{
@@ -66,13 +62,13 @@ const init = (botToken: string, PORT: number, url?: string | undefined) => {
 		// 	command: '/deletefavorite',
 		// 	description: 'Delete crypto from favorites',
 		// },
-	])
+	]);
 
-	cryptoBot.on('message', botFunc)
+	cryptoBot.on('message', botFunc);
 
-	cryptoBot.on('callback_query', botFunc)
+	cryptoBot.on('callback_query', botFunc);
 
-	return cryptoBot
-}
+	return cryptoBot;
+};
 
-export = { init }
+export = { init };

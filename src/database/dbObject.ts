@@ -1,10 +1,10 @@
-import { MongoClient } from 'mongodb'
-import config from 'config'
+import { MongoClient } from 'mongodb';
+import config from 'config';
 
 const dbClient = new MongoClient(config.get('db.conStr'), {
-	//@ts-ignore
+	// @ts-ignore
 	useNewUrlParser: true,
 	useUnifiedTopology: true,
-})
+});
 
-export = dbClient
+export = dbClient;
