@@ -1,4 +1,5 @@
 import type { InlineKeyboardMarkup } from 'node-telegram-bot-api';
+import type { PushOperator } from 'mongodb';
 import dbClient from '../database/dbObject';
 import cryptoRequest from './cryptoRequest';
 import type { tFavCache, tCryptoCache, tRecentCache, tBotNswr } from '../types/procTypes';
@@ -33,14 +34,14 @@ const getFavList = async (uID: number) => {
 		return res;
 	}
 
-	let cUser = await user.findOne({ uID });
-	if (!cUser) {
+	let currentUser = await user.findOne({ uID });
+	if (!currentUser) {
 		await user.insertOne({ uID, favorites: [] });
-		cUser = await user.findOne({ uID });
+		currentUser = await user.findOne({ uID });
 	}
 
 	favCache.set(uID, {
-		favorites: cUser?.favorites,
+		favorites: currentUser?.favorites,
 		taskID: resetFavCache(uID),
 	});
 
@@ -53,19 +54,14 @@ const addFavList = async (uID: number, item: string): Promise<boolean> => {
 		return false;
 	}
 
-	const cUser = await user.findOneAndUpdate(
-		{ uID },
-		// @ts-ignore -- impossible to get rid of
-		{ $push: { favorites: item } },
-	);
+	const currentUser = await user.findOneAndUpdate({ uID }, { $push: { favorites: item } as PushOperator<Document> });
 
-	if (!cUser) {
+	if (!currentUser) {
 		throw 'Something wrong with the database. Try again later...';
 	}
 
 	favCache.set(uID, {
-		// @ts-ignore -- impossible to get rid of
-		favorites: cUser.favorites,
+		favorites: (<tFavCache>(<unknown>currentUser)).favorites,
 		taskID: resetFavCache(uID),
 	});
 	return true;
@@ -77,19 +73,14 @@ const delFavList = async (uID: number, item: string): Promise<boolean> => {
 		return false;
 	}
 
-	const cUser = await user.findOneAndUpdate(
-		{ uID },
-		// @ts-ignore -- impossible to get rid of
-		{ $pull: { favorites: item } },
-	);
+	const currentUser = await user.findOneAndUpdate({ uID }, { $pull: { favorites: item } as PushOperator<Document> });
 
-	if (!cUser) {
+	if (!currentUser) {
 		throw 'Something wrong with the database. Try again later...';
 	}
 
 	favCache.set(uID, {
-		// @ts-ignore -- impossible to get rid of
-		favorites: cUser.favorites,
+		favorites: (<tFavCache>(<unknown>currentUser)).favorites,
 		taskID: resetFavCache(uID),
 	});
 	return true;
@@ -114,8 +105,8 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 
 			case '/listrecent': {
 				// Need to copy before working with it because of planned cache clearing
-				let cRecCache = recentCache;
-				if (!cRecCache) {
+				let copyRecCache = recentCache;
+				if (!copyRecCache) {
 					const res = await cryptoRequest.getLatest();
 					const data = res.data.map((e) => ({
 						name: e.symbol,
@@ -123,7 +114,7 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 					}));
 					const updated = res.status.timestamp;
 					recentCache = { data, updated };
-					cRecCache = recentCache;
+					copyRecCache = recentCache;
 
 					let earliest: number;
 					res.data.forEach((e) => {
@@ -138,38 +129,73 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 					// Now cache is somewhat synchronized with api's data update time
 				}
 
-				const date = cRecCache!.updated.split('T');
+				if (!new Date(copyRecCache!.updated)) {
+					throw { msg: 'Error: API sent invalid date...\n', reason: copyRecCache?.updated }; // Message is meant for server only
+				}
+
+				const date = copyRecCache!.updated.split('T');
 
 				let msg = `Here's some recent crypto for you as of ${date[0]} ${date[1].split('.')[0]} UTC:`;
-				cRecCache!.data.forEach((e) => {
+				copyRecCache!.data.forEach((e) => {
 					msg += `\n/${e.name} - <code>$${e.price}</code>`;
 				});
 				return { msg };
 			}
 
 			case '/addfavorite': {
-				const cSymb = query[1]?.toUpperCase();
-				if (!cSymb) {
+				const currentSymbol = query[1]?.toUpperCase();
+
+				if (!currentSymbol) {
 					return {
 						msg: 'You must enter crypto name. Ex:\n<code>/addfavorite XMR</code>',
 					};
 				}
 
+				let copyCrypCache = cryptoCache.get(currentSymbol);
+				if (!copyCrypCache) {
+					const res = (await cryptoRequest.getCurrency(currentSymbol)).data[currentSymbol];
+					cryptoCache.set(currentSymbol, {
+						name: res.name,
+						updated: res.last_updated,
+						price: res.quote.USD.price,
+						supCurrent: res.circulating_supply,
+						supTotal: res.total_supply,
+						supMax: res.max_supply,
+						vol24h: res.quote.USD.volume_24h,
+						volChange24h: res.quote.USD.volume_change_24h,
+						percentChange1h: res.quote.USD.percent_change_1h,
+						percentChange24h: res.quote.USD.percent_change_24h,
+						percentChange7d: res.quote.USD.percent_change_7d,
+						percentChange30d: res.quote.USD.percent_change_30d,
+						marketCap: res.quote.USD.market_cap,
+						marketCapDom: res.quote.USD.market_cap_dominance,
+						fullyDiluted: res.quote.USD.fully_diluted_market_cap,
+					});
+
+					const updateDate = new Date(res.last_updated).getTime();
+
+					copyCrypCache = cryptoCache.get(currentSymbol);
+					setTimeout(() => {
+						cryptoCache.delete(currentSymbol);
+					}, 60050 - (Date.now() - updateDate));
+					// Now cache is somewhat synchronized with api's data update time
+				}
+
 				return {
-					msg: (await addFavList(userID, cSymb)) ? `${cSymb} succesfully added to your favorites` : `${cSymb} is already in your favorites`,
+					msg: (await addFavList(userID, currentSymbol)) ? `${currentSymbol} succesfully added to your favorites` : `${currentSymbol} is already in your favorites`,
 				};
 			}
 
 			case '/deletefavorite': {
-				const cSymb = query[1]?.toUpperCase();
-				if (!cSymb) {
+				const currentSymbol = query[1]?.toUpperCase();
+				if (!currentSymbol) {
 					return {
 						msg: 'You must enter crypto name. Ex:\n<code>/deletefavorite XMR</code>',
 					};
 				}
 
 				return {
-					msg: (await delFavList(userID, cSymb)) ? `${cSymb} succesfully deleted from your favorites` : `${cSymb} is not present in your favorites`,
+					msg: (await delFavList(userID, currentSymbol)) ? `${currentSymbol} succesfully deleted from your favorites` : `${currentSymbol} is not present in your favorites`,
 				};
 			}
 
@@ -203,11 +229,11 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 			}
 
 			default: {
-				const cSymb = query[0].substr(1).toUpperCase();
-				let cCrypCache = cryptoCache.get(cSymb);
-				if (!cCrypCache) {
-					const res = (await cryptoRequest.getCurrency(cSymb)).data[cSymb];
-					cryptoCache.set(cSymb, {
+				const currentSymbol = query[0].substr(1).toUpperCase();
+				let copyCrypCache = cryptoCache.get(currentSymbol);
+				if (!copyCrypCache) {
+					const res = (await cryptoRequest.getCurrency(currentSymbol)).data[currentSymbol];
+					cryptoCache.set(currentSymbol, {
 						name: res.name,
 						updated: res.last_updated,
 						price: res.quote.USD.price,
@@ -227,31 +253,35 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 
 					const updateDate = new Date(res.last_updated).getTime();
 
-					cCrypCache = cryptoCache.get(cSymb);
+					copyCrypCache = cryptoCache.get(currentSymbol);
 					setTimeout(() => {
-						cryptoCache.delete(cSymb);
+						cryptoCache.delete(currentSymbol);
 					}, 60050 - (Date.now() - updateDate));
 					// Now cache is somewhat synchronized with api's data update time
 				}
 
 				const uFavList = await getFavList(userID);
-				const isFav = !!uFavList.find((e) => e === cSymb);
+				const isFav = !!uFavList.find((e) => e === currentSymbol);
 
-				const date = cCrypCache!.updated.split('T');
+				if (!new Date(copyCrypCache!.updated)) {
+					throw { msg: 'Error: API sent invalid date...\n', reason: copyCrypCache?.updated }; // Message is meant for server only
+				}
+
+				const date = copyCrypCache!.updated.split('T');
 				return {
-					msg: `${cCrypCache?.name} - ${date[0]} ${date[1].split('.')[0]} UTC:\nPrice - <code>$${cCrypCache?.price}</code>\n\nSupply:\n\tcurrent - <code>${cCrypCache?.supCurrent}</code>\n\ttotal - <code>${
-						cCrypCache?.supTotal
-					}</code>\n\tmax - <code>${cCrypCache?.supMax}</code>\n\nVolume, 24h - <code>${cCrypCache?.vol24h}</code>\nVolume change, 24h - <code>${cCrypCache?.volChange24h}</code>\nPercent change:\n\t1h - <code>${
-						cCrypCache?.percentChange1h
-					}%</code>\n\t24h - <code>${cCrypCache?.percentChange24h}%</code>\n\t7d - <code>${cCrypCache?.percentChange7d}%</code>\n\t30d - <code>${cCrypCache?.percentChange30d}%</code>\n\nMarket cap - <code>${
-						cCrypCache?.marketCap
-					}</code>\nDominance - <code>${cCrypCache?.marketCapDom}</code>\nFully diluted - <code>${cCrypCache?.fullyDiluted}</code>`,
+					msg: `${copyCrypCache?.name}:\n\tRequest date - <code>${date[0]} ${date[1].split('.')[0]} UTC</code>\n\tPrice - <code>$${copyCrypCache?.price}</code>\n\n\tSupply:\n\t\tcurrent - <code>${
+						copyCrypCache?.supCurrent
+					}</code>\n\t\ttotal - <code>${copyCrypCache?.supTotal}</code>\n\t\tmax - <code>${copyCrypCache?.supMax}</code>\n\n\tVolume, 24h - <code>${copyCrypCache?.vol24h}</code>\n\tVolume change, 24h - <code>${
+						copyCrypCache?.volChange24h
+					}</code>\n\tPercent change:\n\t\t1h - <code>${copyCrypCache?.percentChange1h}%</code>\n\t\t24h - <code>${copyCrypCache?.percentChange24h}%</code>\n\t\t7d - <code>${copyCrypCache?.percentChange7d}%</code>\n\t\t30d - <code>${
+						copyCrypCache?.percentChange30d
+					}%</code>\n\n\tMarket cap - <code>${copyCrypCache?.marketCap}</code>\n\tDominance - <code>${copyCrypCache?.marketCapDom}</code>\n\tFully diluted - <code>${copyCrypCache?.fullyDiluted}</code>`,
 					btn: {
 						inline_keyboard: [
 							[
 								{
 									text: `${isFav ? 'Delete from' : 'Add to'} favorites`,
-									callback_data: `/${isFav ? 'delete' : 'add'}favorite ${cSymb}`,
+									callback_data: `/${isFav ? 'delete' : 'add'}favorite ${currentSymbol}`,
 								},
 							],
 						],
@@ -265,4 +295,4 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 	}
 };
 
-export = queryProcessor;
+export = queryProcessor; // Both ESLint and Typescript don't let me change this one either
