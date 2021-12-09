@@ -45,14 +45,18 @@ type tData = {
 	quote: { [name: string]: tQuote };
 };
 
-type tApiLatest = {
+export type tApiLatest = {
 	data: tData[];
 	status: tStatus;
 };
 
-type tApiCurrency = {
+export type tApiCurrency = {
 	data: { [name: string]: tData };
 	status: tStatus;
 };
 
-export type { tApiLatest, tApiCurrency };
+export type tErrorResponse = {
+	response: {
+		status: number;
+	};
+};

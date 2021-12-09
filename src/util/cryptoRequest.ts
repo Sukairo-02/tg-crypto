@@ -1,6 +1,6 @@
 import axios from 'axios';
 import config from 'config';
-import type { tApiLatest, tApiCurrency } from '../types/reqTypes';
+import type { tApiLatest, tApiCurrency, tErrorResponse } from '../types/reqTypes';
 
 const key: string = config.get('crypto.key');
 
@@ -14,11 +14,9 @@ const getLatest = async (): Promise<tApiLatest> => {
 				},
 			})
 		).data;
+		return res;
 	} catch (e) {
-		// @ts-ignore
-		switch (e?.response?.status) {
-			case 0:
-				break;
+		switch ((<tErrorResponse>e)?.response?.status) {
 			case 400:
 				throw 'Invalid currency. Try another...';
 			case 401:
@@ -29,8 +27,6 @@ const getLatest = async (): Promise<tApiLatest> => {
 				throw 'External api error. Try again later...';
 		}
 	}
-
-	return res!;
 };
 
 const getCurrency = async (name: string): Promise<tApiCurrency> => {
@@ -43,11 +39,9 @@ const getCurrency = async (name: string): Promise<tApiCurrency> => {
 				},
 			})
 		).data;
+		return res;
 	} catch (e) {
-		// @ts-ignore
-		switch (e?.response?.status) {
-			case 0:
-				break;
+		switch ((<tErrorResponse>e)?.response?.status) {
 			case 400:
 				throw 'Invalid currency. Try another...';
 			case 401:
@@ -58,8 +52,6 @@ const getCurrency = async (name: string): Promise<tApiCurrency> => {
 				throw 'External api error. Try again later...';
 		}
 	}
-
-	return res!;
 };
 
-export = { getLatest, getCurrency /* , getCurrencies */ };
+export = { getLatest, getCurrency };

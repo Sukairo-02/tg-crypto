@@ -1,6 +1,25 @@
 import TelegramBot from 'node-telegram-bot-api';
 import qProc from './queryProcessor';
 
+const botFunc = (cryptoBot: TelegramBot) => async (msg: TelegramBot.Message | TelegramBot.CallbackQuery) => {
+	try {
+		const chatID: number | string | undefined = (<TelegramBot.Message>msg)?.chat?.id || (<TelegramBot.CallbackQuery>msg)?.message?.chat?.id;
+		const userID: number | undefined = msg?.from?.id;
+		const raw = (<TelegramBot.Message>msg).text || (<TelegramBot.CallbackQuery>msg).data || '';
+		const query: string[] = raw.split(' ');
+
+		if (typeof userID !== 'number' || !(typeof chatID === 'string' || typeof chatID === 'number')) {
+			return;
+		}
+
+		const qRes = await qProc(query, userID);
+
+		await cryptoBot.sendMessage(chatID, qRes.msg || 'Sorry, no answer has been specified...', { parse_mode: 'HTML', reply_markup: qRes.btn });
+	} catch (e) {
+		console.log(e, msg);
+	}
+};
+
 const init = (botToken: string, PORT: number, url?: string | undefined) => {
 	let cryptoBot: TelegramBot;
 	if (url) {
@@ -16,26 +35,6 @@ const init = (botToken: string, PORT: number, url?: string | undefined) => {
 			polling: true,
 		});
 	}
-
-	const botFunc = async (msg: TelegramBot.Message | TelegramBot.CallbackQuery) => {
-		try {
-			if (typeof msg?.from?.id !== 'number') {
-				return;
-			}
-
-			// @ts-ignore -- one of those fields exist in any incoming type
-			const chatID: string = msg?.chat?.id || msg?.message?.chat?.id;
-			const userID: number = msg.from!.id;
-			// @ts-ignore -- same here
-			const raw = msg.text || msg.data || ' ';
-			const query: string[] = raw.split(' ');
-			const qRes = await qProc(query, userID);
-
-			await cryptoBot.sendMessage(chatID, qRes.msg || 'Sorry, no answer has been specified...', { parse_mode: 'HTML', reply_markup: qRes.btn });
-		} catch (e) {
-			console.log(e, msg);
-		}
-	};
 
 	cryptoBot.setMyCommands([
 		{
@@ -54,21 +53,21 @@ const init = (botToken: string, PORT: number, url?: string | undefined) => {
 			command: '/listfavorite',
 			description: 'Take a look at your favorites',
 		},
-		// {
-		// 	command: '/addfavorite',
-		// 	description: 'Add crypto to favorites',
-		// },
-		// {
-		// 	command: '/deletefavorite',
-		// 	description: 'Delete crypto from favorites',
-		// },
+		{
+			command: '/addfavorite',
+			description: 'Add crypto to favorites',
+		},
+		{
+			command: '/deletefavorite',
+			description: 'Delete crypto from favorites',
+		},
 	]);
 
-	cryptoBot.on('message', botFunc);
+	cryptoBot.on('message', botFunc(cryptoBot));
 
-	cryptoBot.on('callback_query', botFunc);
+	cryptoBot.on('callback_query', botFunc(cryptoBot));
 
 	return cryptoBot;
 };
 
-export = { init };
+export = { init }; // Exporting in recommended way here leads to errors both here and on import
