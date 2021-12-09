@@ -1,7 +1,7 @@
 import type { InlineKeyboardMarkup } from 'node-telegram-bot-api';
 import type { PushOperator } from 'mongodb';
 import dbClient from '../database/dbObject';
-import cryptoRequest from './cryptoRequest';
+import { getLatest, getCurrency } from './cryptoRequest';
 import type { tFavCache, tCryptoCache, tRecentCache, tBotNswr } from '../types/procTypes';
 
 const user = dbClient.db('tgCrypto').collection('User');
@@ -86,7 +86,7 @@ const delFavList = async (uID: number, item: string): Promise<boolean> => {
 	return true;
 };
 
-const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr> => {
+export = async (query: string[], userID: number): Promise<tBotNswr> => {
 	try {
 		if (!query || !query[0] || query[0][0] !== '/') {
 			return { msg: 'You talking to me?' };
@@ -107,7 +107,7 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 				// Need to copy before working with it because of planned cache clearing
 				let copyRecCache = recentCache;
 				if (!copyRecCache) {
-					const res = await cryptoRequest.getLatest();
+					const res = await getLatest();
 					const data = res.data.map((e) => ({
 						name: e.symbol,
 						price: e.quote.USD.price,
@@ -153,7 +153,7 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 
 				let copyCrypCache = cryptoCache.get(currentSymbol);
 				if (!copyCrypCache) {
-					const res = (await cryptoRequest.getCurrency(currentSymbol)).data[currentSymbol];
+					const res = (await getCurrency(currentSymbol)).data[currentSymbol];
 					cryptoCache.set(currentSymbol, {
 						name: res.name,
 						updated: res.last_updated,
@@ -232,7 +232,7 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 				const currentSymbol = query[0].substr(1).toUpperCase();
 				let copyCrypCache = cryptoCache.get(currentSymbol);
 				if (!copyCrypCache) {
-					const res = (await cryptoRequest.getCurrency(currentSymbol)).data[currentSymbol];
+					const res = (await getCurrency(currentSymbol)).data[currentSymbol];
 					cryptoCache.set(currentSymbol, {
 						name: res.name,
 						updated: res.last_updated,
@@ -294,5 +294,3 @@ const queryProcessor = async (query: string[], userID: number): Promise<tBotNswr
 		return typeof e === 'string' ? { msg: e } : { msg: 'Internal server error occured. Try again later...' };
 	}
 };
-
-export = queryProcessor; // Both ESLint and Typescript don't let me change this one either

@@ -4,7 +4,7 @@ import type { tApiLatest, tApiCurrency, tErrorResponse } from '../types/reqTypes
 
 const key: string = config.get('crypto.key');
 
-const getLatest = async (): Promise<tApiLatest> => {
+export const getLatest = async (): Promise<tApiLatest> => {
 	let res: tApiLatest;
 	try {
 		res = (
@@ -29,7 +29,7 @@ const getLatest = async (): Promise<tApiLatest> => {
 	}
 };
 
-const getCurrency = async (name: string): Promise<tApiCurrency> => {
+export const getCurrency = async (name: string): Promise<tApiCurrency> => {
 	let res: tApiCurrency;
 	try {
 		res = (
@@ -53,5 +53,3 @@ const getCurrency = async (name: string): Promise<tApiCurrency> => {
 		}
 	}
 };
-
-export = { getLatest, getCurrency };
