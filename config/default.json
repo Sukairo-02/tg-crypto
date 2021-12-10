@@ -1,7 +1,7 @@
 {
 	"server": {
 		"PORT": 3000,
-		"URL": ""
+		"URL": "https://7115-77-109-50-207.ngrok.io"
 	},
 
 	"db": {

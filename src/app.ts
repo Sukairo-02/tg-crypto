@@ -1,5 +1,6 @@
 import config from 'config';
-import tgBot from './util/tgBot';
+// import tgBot from './util/tgBot';
+import tgBot from './util/tgCustom';
 import dbClient from './database/dbObject';
 
 const PORT: number = Number(process.env.PORT) || config.get('server.PORT') || 3000;
