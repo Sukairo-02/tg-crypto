@@ -20,7 +20,7 @@ const botFunc = (cryptoBot: TelegramBot) => async (msg: TelegramBot.Message | Te
 	}
 };
 
-const init = (botToken: string, PORT: number, url?: string | undefined) => {
+export = (botToken: string, PORT: number, url?: string | undefined) => {
 	let cryptoBot: TelegramBot;
 	if (url) {
 		cryptoBot = new TelegramBot(botToken, {
@@ -69,5 +69,3 @@ const init = (botToken: string, PORT: number, url?: string | undefined) => {
 
 	return cryptoBot;
 };
-
-export = { init }; // Exporting in recommended way here leads to errors both here and on import

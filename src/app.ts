@@ -12,7 +12,7 @@ const start = async () => {
 			console.log(err || 'Database connected succesfully!');
 		});
 
-		tgBot.init(botToken, PORT, url);
+		tgBot(botToken, PORT, url);
 	} catch (e) {
 		console.log(e);
 	} finally {
