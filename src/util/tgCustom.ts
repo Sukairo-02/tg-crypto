@@ -8,7 +8,7 @@ app.use(express.json());
 
 let localToken: string;
 
-app.post('/bot', async (req: express.Request, res: express.Response) => {
+const botProc = async (req: express.Request, res: express.Response) => {
 	try {
 		const msg: Update = req.body;
 		if (!msg || !msg.update_id) {
@@ -37,7 +37,7 @@ app.post('/bot', async (req: express.Request, res: express.Response) => {
 		console.log(e, req);
 		return res.sendStatus(200);
 	}
-});
+};
 
 export = async (botToken: string, port: number | string, url: string) => {
 	try {
@@ -51,8 +51,10 @@ export = async (botToken: string, port: number | string, url: string) => {
 			console.log(`Bot: listening to port ${port}`);
 		});
 
-		await axios.post(`https://api.telegram.org/bot${botToken}/setWebhook`, { url: `${url}/bot` });
-		console.log(`Bot: webhook set to url: ${url}/bot`);
+		app.post(`/bot${botToken}`, botProc);
+
+		await axios.post(`https://api.telegram.org/bot${botToken}/setWebhook`, { url: `${url}/bot${botToken}` });
+		console.log(`Bot: webhook set to url: ${url}/bot${botToken}`);
 	} catch (e) {
 		console.log(e);
 	}
